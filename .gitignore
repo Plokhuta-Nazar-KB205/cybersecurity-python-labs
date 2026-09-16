@@ -1,0 +1,3 @@
+# Ігнорувати динамічні файли всередині папки data 
+labs/lab01/data/*.csv
+labs/lab01/data/*.json
