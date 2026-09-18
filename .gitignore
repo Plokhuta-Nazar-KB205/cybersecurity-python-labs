@@ -1,3 +1,11 @@
-# Ігнорувати динамічні файли всередині папки data 
-labs/lab01/data/*.csv
-labs/lab01/data/*.json
+# Віртуальне середовище
+.venv/
+
+# Клієнтські та лінтерні кеші
+.ruff_cache/
+__pycache__/
+*.pyc
+
+# Динамічні дані та логи
+labs/lab01/data/log.json
+labs/lab01/data/users.csv
