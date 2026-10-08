@@ -9,3 +9,6 @@ __pycache__/
 # Динамічні дані та логи
 labs/lab01/data/log.json
 labs/lab01/data/users.csv
+
+# Звіти аудиту заголовків (лаб. 2)
+labs/lab02/data/headers_audit.*
