@@ -1,0 +1,74 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "siem"
+    },
+    {
+      "id": 2,
+      "name": "helpdesk"
+    },
+    {
+      "id": 3,
+      "name": "monitoring"
+    }
+  ],
+  "records": [
+    {
+      "code": "V09-01",
+      "title": "Вимірювання опрацювання 01",
+      "category_id": 1,
+      "value": 5.0,
+      "status": "new"
+    },
+    {
+      "code": "V09-02",
+      "title": "Вимірювання опрацювання 02",
+      "category_id": 2,
+      "value": 18.0,
+      "status": "in_progress"
+    },
+    {
+      "code": "V09-03",
+      "title": "Вимірювання опрацювання 03",
+      "category_id": 3,
+      "value": 12.0,
+      "status": "done"
+    },
+    {
+      "code": "V09-04",
+      "title": "Вимірювання опрацювання 04",
+      "category_id": 1,
+      "value": 25.0,
+      "status": "new"
+    },
+    {
+      "code": "V09-05",
+      "title": "Вимірювання опрацювання 05",
+      "category_id": 2,
+      "value": 9.0,
+      "status": "done"
+    },
+    {
+      "code": "V09-06",
+      "title": "Вимірювання опрацювання 06",
+      "category_id": 3,
+      "value": 30.0,
+      "status": "in_progress"
+    },
+    {
+      "code": "V09-07",
+      "title": "Вимірювання опрацювання 07",
+      "category_id": 1,
+      "value": 15.0,
+      "status": "done"
+    },
+    {
+      "code": "V09-08",
+      "title": "Вимірювання опрацювання 08",
+      "category_id": 2,
+      "value": 7.0,
+      "status": "new"
+    }
+  ]
+}
