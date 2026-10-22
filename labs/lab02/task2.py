@@ -59,17 +59,29 @@ class AuditResult:
 
 def load_headers(path: Path) -> list[dict]:
     """Зчитує JSON зі списком {url, headers} і перевіряє його форму."""
-    with path.open(encoding="utf-8") as file:
-        data = json.load(file)
-    if not isinstance(data, list):
-        raise TypeError("Очікується JSON-список об'єктів {url, headers}")
-    for index, item in enumerate(data):
-        if (
-            not isinstance(item, dict)
-            or not isinstance(item.get("url"), str)
-            or not isinstance(item.get("headers"), dict)
-        ):
-            raise TypeError(f"Запис №{index} не містить url та headers")
+    try:
+        with path.open(encoding="utf-8") as file:
+            data = json.load(file)
+        if not isinstance(data, list):
+            raise TypeError("Очікується JSON-список об'єктів {url, headers}")
+        for index, item in enumerate(data):
+            if (
+                not isinstance(item, dict)
+                or not isinstance(item.get("url"), str)
+                or not isinstance(item.get("headers"), dict)
+            ):
+                raise TypeError(f"Запис №{index} не містить url та headers")
+    except FileNotFoundError as err:
+        raise FileNotFoundError(
+            f"Файл заголовків не знайдено: {path}"
+        ) from err
+    except ValueError as err:
+        # json.JSONDecodeError теж є ValueError.
+        raise ValueError(f"Некоректний формат JSON у файлі: {path}") from err
+    except (TypeError, KeyError) as err:
+        raise TypeError(
+            f"Невідповідна структура даних у JSON: {path} ({err})"
+        ) from err
     return data
 
 
@@ -210,8 +222,8 @@ def print_leaks(results: list[AuditResult]) -> None:
         print("No software version leaks detected.")
 
 
-def export_csv(results: list[AuditResult], path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def export_csv(results: list[AuditResult], path: Path) -> bool:
+    """Записує CSV-звіт; повертає False, якщо запис не вдався."""
     columns = [
         "url",
         "score",
@@ -221,30 +233,42 @@ def export_csv(results: list[AuditResult], path: Path) -> None:
         "weak_headers",
         "leaks",
     ]
-    with path.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=columns)
-        writer.writeheader()
-        for result in results:
-            row = asdict(result)
-            for key in ("missing_headers", "weak_headers", "leaks"):
-                row[key] = "; ".join(row[key])
-            writer.writerow(row)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=columns)
+            writer.writeheader()
+            for result in results:
+                row = asdict(result)
+                for key in ("missing_headers", "weak_headers", "leaks"):
+                    row[key] = "; ".join(row[key])
+                writer.writerow(row)
+    except OSError as err:
+        logger.error("Помилка запису у файл %s: %s", path, err)
+        return False
+    return True
 
 
 def export_json(
     results: list[AuditResult],
     path: Path,
     strict: bool,
-) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+) -> bool:
+    """Записує JSON-звіт; повертає False, якщо запис не вдався."""
     report = {
         "strict": strict,
         "total": len(results),
         "results": [asdict(result) for result in results],
     }
-    with path.open("w", encoding="utf-8") as file:
-        json.dump(report, file, ensure_ascii=False, indent=2)
-        file.write("\n")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as file:
+            json.dump(report, file, ensure_ascii=False, indent=2)
+            file.write("\n")
+    except OSError as err:
+        logger.error("Помилка запису у файл %s: %s", path, err)
+        return False
+    return True
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -308,18 +332,14 @@ def run(args: argparse.Namespace) -> int:
     summary = ", ".join(f"{k}={v}" for k, v in counts.items())
     print(f"\nПеревірено сайтів: {len(results)} ({summary})")
 
-    try:
-        if args.output_csv:
-            export_csv(results, args.output_csv)
-            logger.info("Header audit report generated at %s", args.output_csv)
-        if args.output_json:
-            export_json(results, args.output_json, args.strict)
-            logger.info(
-                "Header audit report generated at %s", args.output_json
-            )
-    except OSError as error:
-        logger.error("Не вдалося записати звіт: %s", error)
-        return 1
+    if args.output_csv:
+        if not export_csv(results, args.output_csv):
+            return 1
+        logger.info("Header audit report generated at %s", args.output_csv)
+    if args.output_json:
+        if not export_json(results, args.output_json, args.strict):
+            return 1
+        logger.info("Header audit report generated at %s", args.output_json)
     return 0
 
 

@@ -193,11 +193,15 @@ class UserAccount:
         self.audit_log = audit_log if audit_log is not None else AuditLog()
 
     def login(self, username: str, password: str, ip: str) -> bool:
-        ok = (
-            username == self.user.username
-            and self.user.active
-            and self.user.check_password(password)
-        )
+        try:
+            ok = (
+                username == self.user.username
+                and self.user.active
+                and self.user.check_password(password)
+            )
+        except Exception:  # noqa: BLE001
+            # Збій перевірки пароля трактуємо як невдалу спробу входу.
+            ok = False
         if not ok:
             self.audit_log.add_log(username, "login_failure")
             return False
@@ -209,7 +213,12 @@ class UserAccount:
     def is_authenticated(self) -> bool:
         if self.session is None:
             return False
-        if not self.session.is_active(self.SESSION_TIMEOUT_SEC):
+        try:
+            active = self.session.is_active(self.SESSION_TIMEOUT_SEC)
+        except ValueError:
+            # Некоректний таймаут: сеанс вважаємо недійсним.
+            return False
+        if not active:
             # Прострочений сеанс не подовжується.
             return False
         self.session.touch()
